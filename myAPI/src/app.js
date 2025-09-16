@@ -3,6 +3,9 @@ const cors = require("cors");
 
 //* Import routes  */
 const userRoutes = require("./routes/userRoutes");
+const rolRoutes = require("./routes/rolRoutes");
+const parkingRoutes = require("./routes/parkingRoutes");
+const vehicleTypeRoutes = require("./routes/vehicleTypeRoutes");
 
 const app = express();
 
@@ -16,5 +19,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/user", userRoutes);
+app.use("/rol", rolRoutes);
+app.use("/parking", parkingRoutes);
+app.use("/vehicle-types", vehicleTypeRoutes);
+
 
 module.exports = app;

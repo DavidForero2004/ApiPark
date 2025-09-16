@@ -1,0 +1,13 @@
+# Node
+myAPI/node_modules/
+myAPI/package-lock.json
+
+# Env files
+myAPI/src/.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
