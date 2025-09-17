@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS parkingAPI;
 USE parkingAPI;
 
--- 1. Informacion del parqueadero
+-- 1. Parqueadero
 CREATE TABLE parqueadero (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
@@ -14,14 +14,13 @@ CREATE TABLE parqueadero (
   UNIQUE(nombre, direccion)
 );
 
--- 2. Roles del sistema
--- Super Admin, Admin, Usuario
+-- 2. Roles
 CREATE TABLE rol (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL
 );
 
--- 3. Usuario
+-- 3. Usuarios
 CREATE TABLE usuario (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
@@ -34,17 +33,16 @@ CREATE TABLE usuario (
   parqueadero_id INT NOT NULL,
   FOREIGN KEY (rol_id) REFERENCES rol(id),
   FOREIGN KEY (parqueadero_id) REFERENCES parqueadero(id),
-  UNIQUE(cedula, email, parqueadero_id )
+  UNIQUE(cedula, email, parqueadero_id)
 );
 
--- 4. Tipos de vehiculo
--- Ej: Carro, Camioneta, Moto, Bici, etc.
+-- 4. Tipos de vehículo
 CREATE TABLE tipos_vehiculo (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100) NOT NULL 
+  nombre VARCHAR(100) NOT NULL
 );
 
--- 5. Tarifas por parqueadero
+-- 5. Tarifas
 CREATE TABLE tarifas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   parqueadero_id INT NOT NULL,
@@ -59,274 +57,163 @@ CREATE TABLE tarifas (
 -- 6. Mensualidades
 CREATE TABLE mensualidad (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id INT NOT NULL,             -- Cliente
-  tipo_vehiculo_id INT NOT NULL,       -- Tipo de vehículo
-  placa VARCHAR(20) NOT NULL,         
-  tarifa_id INT NOT NULL,              -- Tarifa aplicada
+  usuario_id INT NOT NULL,
+  tarifa_id INT NOT NULL,
+  placa VARCHAR(20) NOT NULL,
   fecha_inicio DATE NOT NULL,
   fecha_fin DATE NOT NULL,
   estado ENUM('ACTIVA','VENCIDA','CANCELADA') DEFAULT 'ACTIVA',
-  parqueadero_id INT NOT NULL,         -- Parqueadero donde aplica
   FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-  FOREIGN KEY (tipo_vehiculo_id) REFERENCES tipos_vehiculo(id),
   FOREIGN KEY (tarifa_id) REFERENCES tarifas(id),
-  FOREIGN KEY (parqueadero_id) REFERENCES parqueadero(id),
-  UNIQUE (parqueadero_id, placa) -- una placa no puede repetirse en el mismo parqueadero
+  UNIQUE(usuario_id, placa)  -- Una placa por usuario
 );
 
 -- 7. Transacciones
 CREATE TABLE transacciones (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id INT NOT NULL,               -- Cliente afectado
-  parqueadero_id INT NOT NULL,           -- Parqueadero donde ocurrió
-  mensualidad_id INT NOT NULL,           -- Relación directa a la mensualidad
+  usuario_id INT NOT NULL,
+  mensualidad_id INT NOT NULL,
   tipo ENUM('CREACION','RENOVACION','PAGO','CANCELACION') NOT NULL,
-  monto DECIMAL(10,2) DEFAULT 0.00,      -- Valor del movimiento
-  descripcion MEDIUMTEXT,                -- Detalles de la transacción
+  monto DECIMAL(10,2) DEFAULT 0.00,
+  descripcion MEDIUMTEXT,
   fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuario(id),
-  FOREIGN KEY (parqueadero_id) REFERENCES parqueadero(id),
   FOREIGN KEY (mensualidad_id) REFERENCES mensualidad(id)
 );
 
--- 8. Metodos de pago
+-- 8. Métodos de pago
 CREATE TABLE metodos_pago (
   id INT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(50) NOT NULL
 );
 
--- 9. Tabla hash (para guardar códigos)
+-- 9. Hash
 CREATE TABLE hash (
   id INT AUTO_INCREMENT PRIMARY KEY,
   code LONGTEXT NOT NULL
 );
 
-
--- CONSULTAR HASH
+--PROCEDURES
 
 DELIMITER //
 
+-- HASH
 CREATE PROCEDURE hash_Validate(IN p_code LONGTEXT)
 BEGIN
-    SELECT CASE 
-        WHEN EXISTS (SELECT 1 FROM hash WHERE code = p_code)
-        THEN 1 ELSE 0 
-    END AS valido;
+    SELECT CASE WHEN EXISTS (SELECT 1 FROM hash WHERE code = p_code) THEN 1 ELSE 0 END AS valido;
 END //
+
+-- ROLES
+CREATE PROCEDURE sp_createRol(IN p_nombre VARCHAR(100)) BEGIN INSERT INTO rol(nombre) VALUES(p_nombre); END //
+CREATE PROCEDURE sp_getRoles() BEGIN SELECT * FROM rol; END //
+CREATE PROCEDURE sp_getRolById(IN p_id INT) BEGIN SELECT * FROM rol WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateRol(IN p_id INT, IN p_nombre VARCHAR(100)) BEGIN UPDATE rol SET nombre=p_nombre WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteRol(IN p_id INT) BEGIN DELETE FROM rol WHERE id=p_id; END //
+
+-- PARQUEADERO
+CREATE PROCEDURE sp_createParqueadero(IN p_nombre VARCHAR(100), IN p_direccion VARCHAR(255), IN p_telefono VARCHAR(20), IN p_email VARCHAR(255), IN p_codigo VARCHAR(255), IN p_legal LONGTEXT)
+BEGIN INSERT INTO parqueadero(nombre,direccion,telefono,email,codigo,legal) VALUES(p_nombre,p_direccion,p_telefono,p_email,p_codigo,p_legal); END //
+CREATE PROCEDURE sp_getParqueaderos() BEGIN SELECT * FROM parqueadero; END //
+CREATE PROCEDURE sp_getParqueaderoById(IN p_id INT) BEGIN SELECT * FROM parqueadero WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateParqueadero(IN p_id INT, IN p_nombre VARCHAR(100), IN p_direccion VARCHAR(255), IN p_telefono VARCHAR(20), IN p_email VARCHAR(255), IN p_codigo VARCHAR(255), IN p_legal LONGTEXT)
+BEGIN UPDATE parqueadero SET nombre=p_nombre,direccion=p_direccion,telefono=p_telefono,email=p_email,codigo=p_codigo,legal=p_legal WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteParqueadero(IN p_id INT) BEGIN DELETE FROM parqueadero WHERE id=p_id; END //
+
+-- USUARIO
+CREATE PROCEDURE sp_createUsuario(IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
+BEGIN INSERT INTO usuario(nombre,apellido,cedula,telefono,email,password,rol_id,parqueadero_id) VALUES(p_nombre,p_apellido,p_cedula,p_telefono,p_email,p_password,p_rol_id,p_parqueadero_id); END //
+CREATE PROCEDURE sp_getUsuarios() BEGIN SELECT * FROM usuario; END //
+CREATE PROCEDURE sp_getUsuarioById(IN p_id INT) BEGIN SELECT * FROM usuario WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateUsuario(IN p_id INT, IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
+BEGIN UPDATE usuario SET nombre=p_nombre,apellido=p_apellido,cedula=p_cedula,telefono=p_telefono,email=p_email,password=p_password,rol_id=p_rol_id,parqueadero_id=p_parqueadero_id WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteUsuario(IN p_id INT) BEGIN DELETE FROM usuario WHERE id=p_id; END //
+
+-- TIPOS DE VEHÍCULO
+CREATE PROCEDURE sp_createTipoVehiculo(IN p_nombre VARCHAR(100)) BEGIN INSERT INTO tipos_vehiculo(nombre) VALUES(p_nombre); END //
+CREATE PROCEDURE sp_getTiposVehiculo() BEGIN SELECT * FROM tipos_vehiculo; END //
+CREATE PROCEDURE sp_getTipoVehiculoById(IN p_id INT) BEGIN SELECT * FROM tipos_vehiculo WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateTipoVehiculo(IN p_id INT, IN p_nombre VARCHAR(100)) BEGIN UPDATE tipos_vehiculo SET nombre=p_nombre WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteTipoVehiculo(IN p_id INT) BEGIN DELETE FROM tipos_vehiculo WHERE id=p_id; END //
+
+-- TARIFAS
+CREATE PROCEDURE sp_createTarifa(IN p_parqueadero_id INT, IN p_tipo_vehiculo_id INT, IN p_tarifa_dia DECIMAL(10,2), IN p_tarifa_mes DECIMAL(10,2))
+BEGIN INSERT INTO tarifas(parqueadero_id,tipo_vehiculo_id,tarifa_dia,tarifa_mes) VALUES(p_parqueadero_id,p_tipo_vehiculo_id,p_tarifa_dia,p_tarifa_mes); END //
+CREATE PROCEDURE sp_getTarifas() BEGIN SELECT * FROM tarifas; END //
+CREATE PROCEDURE sp_getTarifaById(IN p_id INT) BEGIN SELECT * FROM tarifas WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateTarifa(IN p_id INT, IN p_parqueadero_id INT, IN p_tipo_vehiculo_id INT, IN p_tarifa_dia DECIMAL(10,2), IN p_tarifa_mes DECIMAL(10,2))
+BEGIN UPDATE tarifas SET parqueadero_id=p_parqueadero_id,tipo_vehiculo_id=p_tipo_vehiculo_id,tarifa_dia=p_tarifa_dia,tarifa_mes=p_tarifa_mes WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteTarifa(IN p_id INT) BEGIN DELETE FROM tarifas WHERE id=p_id; END //
+
+-- MENSUALIDADES
+CREATE PROCEDURE sp_createMensualidad(IN p_usuario_id INT, IN p_tarifa_id INT, IN p_placa VARCHAR(20), IN p_fecha_inicio DATE, IN p_fecha_fin DATE, IN p_estado ENUM('ACTIVA','VENCIDA','CANCELADA'))
+BEGIN INSERT INTO mensualidad(usuario_id,tarifa_id,placa,fecha_inicio,fecha_fin,estado) VALUES(p_usuario_id,p_tarifa_id,p_placa,p_fecha_inicio,p_fecha_fin,p_estado); END //
+CREATE PROCEDURE sp_getMensualidades() BEGIN SELECT * FROM mensualidad; END //
+CREATE PROCEDURE sp_getMensualidadById(IN p_id INT) BEGIN SELECT * FROM mensualidad WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateMensualidad(IN p_id INT, IN p_usuario_id INT, IN p_tarifa_id INT, IN p_placa VARCHAR(20), IN p_fecha_inicio DATE, IN p_fecha_fin DATE, IN p_estado ENUM('ACTIVA','VENCIDA','CANCELADA'))
+BEGIN UPDATE mensualidad SET usuario_id=p_usuario_id,tarifa_id=p_tarifa_id,placa=p_placa,fecha_inicio=p_fecha_inicio,fecha_fin=p_fecha_fin,estado=p_estado WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteMensualidad(IN p_id INT) BEGIN DELETE FROM mensualidad WHERE id=p_id; END //
+
+-- TRANSACCIONES
+CREATE PROCEDURE sp_createTransaccion(IN p_usuario_id INT, IN p_mensualidad_id INT, IN p_tipo ENUM('CREACION','RENOVACION','PAGO','CANCELACION'), IN p_monto DECIMAL(10,2), IN p_descripcion MEDIUMTEXT)
+BEGIN INSERT INTO transacciones(usuario_id,mensualidad_id,tipo,monto,descripcion) VALUES(p_usuario_id,p_mensualidad_id,p_tipo,p_monto,p_descripcion); END //
+CREATE PROCEDURE sp_getTransacciones() BEGIN SELECT * FROM transacciones; END //
+CREATE PROCEDURE sp_getTransaccionById(IN p_id INT) BEGIN SELECT * FROM transacciones WHERE id=p_id; END //
+CREATE PROCEDURE sp_updateTransaccion(IN p_id INT, IN p_usuario_id INT, IN p_mensualidad_id INT, IN p_tipo ENUM('CREACION','RENOVACION','PAGO','CANCELACION'), IN p_monto DECIMAL(10,2), IN p_descripcion MEDIUMTEXT)
+BEGIN UPDATE transacciones SET usuario_id=p_usuario_id,mensualidad_id=p_mensualidad_id,tipo=p_tipo,monto=p_monto,descripcion=p_descripcion WHERE id=p_id; END //
+CREATE PROCEDURE sp_deleteTransaccion(IN p_id INT) BEGIN DELETE FROM transacciones WHERE id=p_id; END //
 
 DELIMITER ;
 
--- Crear procedimiento para insertar uno o varios roles
-DELIMITER //
-CREATE PROCEDURE sp_createRol(IN p_nombre VARCHAR(100))
-BEGIN
-    INSERT INTO rol (nombre) VALUES (p_nombre);
-END //
-DELIMITER ;
 
--- Obtener todos los roles
-DELIMITER //
-CREATE PROCEDURE sp_getRoles()
-BEGIN
-    SELECT * FROM rol;
-END //
-DELIMITER ;
+--PROOF DATA
 
--- Obtener rol por id
-DELIMITER //
-CREATE PROCEDURE sp_getRolById(IN p_id INT)
-BEGIN
-    SELECT * FROM rol WHERE id = p_id;
-END //
-DELIMITER ;
+-- ROLES
+INSERT INTO rol(nombre) VALUES 
+('Super Admin'),
+('Admin'),
+('Usuario');
 
--- Actualizar rol
-DELIMITER //
-CREATE PROCEDURE sp_updateRol(IN p_id INT, IN p_nombre VARCHAR(100))
-BEGIN
-    UPDATE rol SET nombre = p_nombre WHERE id = p_id;
-END //
-DELIMITER ;
+-- PARQUEADEROS
+INSERT INTO parqueadero(nombre,direccion,telefono,email,codigo,legal) VALUES
+('Parqueadero Central','Calle 100 #10-20','3001234567','central@parking.com','PC001','Legalidad ok'),
+('Parqueadero Norte','Carrera 15 #50-30','3009876543','norte@parking.com','PN002','Legalidad ok');
 
--- Eliminar rol
-DELIMITER //
-CREATE PROCEDURE sp_deleteRol(IN p_id INT)
-BEGIN
-    DELETE FROM rol WHERE id = p_id;
-END //
-DELIMITER ;
+-- USUARIOS
+INSERT INTO usuario(nombre,apellido,cedula,telefono,email,password,rol_id,parqueadero_id) VALUES
+('Juan','Perez','1234567890','3001112233','juanp@gmail.com','12345',1,1),
+('Maria','Lopez','0987654321','3004445566','marial@gmail.com','12345',2,2);
 
+-- TIPOS DE VEHÍCULO
+INSERT INTO tipos_vehiculo(nombre) VALUES
+('Carro'),
+('Moto'),
+('Camioneta');
 
--- Crear parqueadero
-DELIMITER //
-CREATE PROCEDURE sp_createParqueadero(
-    IN p_nombre VARCHAR(100),
-    IN p_direccion VARCHAR(255),
-    IN p_telefono VARCHAR(20),
-    IN p_email VARCHAR(255),
-    IN p_codigo VARCHAR(255),
-    IN p_legal LONGTEXT
-)
-BEGIN
-    INSERT INTO parqueadero (nombre, direccion, telefono, email, codigo, legal)
-    VALUES (p_nombre, p_direccion, p_telefono, p_email, p_codigo, p_legal);
-END //
-DELIMITER ;
+-- TARIFAS
+INSERT INTO tarifas(parqueadero_id,tipo_vehiculo_id,tarifa_dia,tarifa_mes) VALUES
+(1,1,5000,120000),
+(1,2,3000,70000),
+(2,1,6000,130000),
+(2,3,8000,150000);
 
--- Obtener todos los parqueaderos
-DELIMITER //
-CREATE PROCEDURE sp_getParqueaderos()
-BEGIN
-    SELECT * FROM parqueadero;
-END //
-DELIMITER ;
+-- MENSUALIDADES
+INSERT INTO mensualidad(usuario_id,tarifa_id,placa,fecha_inicio,fecha_fin,estado) VALUES
+(1,1,'ABC123', '2025-09-01', '2025-09-30', 'ACTIVA'),
+(2,3,'XYZ987', '2025-09-01', '2025-09-30', 'ACTIVA');
 
--- Obtener parqueadero por id
-DELIMITER //
-CREATE PROCEDURE sp_getParqueaderoById(IN p_id INT)
-BEGIN
-    SELECT * FROM parqueadero WHERE id = p_id;
-END //
-DELIMITER ;
+-- TRANSACCIONES
+INSERT INTO transacciones(usuario_id,mensualidad_id,tipo,monto,descripcion) VALUES
+(1,1,'CREACION',120000,'Mensualidad septiembre 2025'),
+(2,2,'CREACION',150000,'Mensualidad septiembre 2025');
 
--- Actualizar parqueadero
-DELIMITER //
-CREATE PROCEDURE sp_updateParqueadero(
-    IN p_id INT,
-    IN p_nombre VARCHAR(100),
-    IN p_direccion VARCHAR(255),
-    IN p_telefono VARCHAR(20),
-    IN p_email VARCHAR(255),
-    IN p_codigo VARCHAR(255),
-    IN p_legal LONGTEXT
-)
-BEGIN
-    UPDATE parqueadero
-    SET nombre = p_nombre,
-        direccion = p_direccion,
-        telefono = p_telefono,
-        email = p_email,
-        codigo = p_codigo,
-        legal = p_legal
-    WHERE id = p_id;
-END //
-DELIMITER ;
+-- METODOS DE PAGO
+INSERT INTO metodos_pago(nombre) VALUES
+('Efectivo'),
+('Tarjeta Debito'),
+('Tarjeta Crédito'),
+('Transferencia');
 
--- Eliminar parqueadero
-DELIMITER //
-CREATE PROCEDURE sp_deleteParqueadero(IN p_id INT)
-BEGIN
-    DELETE FROM parqueadero WHERE id = p_id;
-END //
-DELIMITER ;
-
-
--- Crear usuario
-DELIMITER //
-CREATE PROCEDURE sp_createUsuario(
-  IN p_nombre VARCHAR(100),
-  IN p_apellido VARCHAR(100),
-  IN p_cedula VARCHAR(20),
-  IN p_telefono VARCHAR(20),
-  IN p_email VARCHAR(100),
-  IN p_password VARCHAR(255),
-  IN p_rol_id INT,
-  IN p_parqueadero_id INT
-)
-BEGIN
-  INSERT INTO usuario (nombre, apellido, cedula, telefono, email, password, rol_id, parqueadero_id)
-  VALUES (p_nombre, p_apellido, p_cedula, p_telefono, p_email, p_password, p_rol_id, p_parqueadero_id);
-END //
-DELIMITER ;
-
--- Obtener todos los usuarios
-DELIMITER //
-CREATE PROCEDURE sp_getUsuarios()
-BEGIN
-  SELECT * FROM usuario;
-END //
-DELIMITER ;
-
--- Obtener usuario por ID
-DELIMITER //
-CREATE PROCEDURE sp_getUsuarioById(IN p_id INT)
-BEGIN
-  SELECT * FROM usuario WHERE id = p_id;
-END //
-DELIMITER ;
-
--- Actualizar usuario
-DELIMITER //
-CREATE PROCEDURE sp_updateUsuario(
-  IN p_id INT,
-  IN p_nombre VARCHAR(100),
-  IN p_apellido VARCHAR(100),
-  IN p_cedula VARCHAR(20),
-  IN p_telefono VARCHAR(20),
-  IN p_email VARCHAR(100),
-  IN p_password VARCHAR(255),
-  IN p_rol_id INT,
-  IN p_parqueadero_id INT
-)
-BEGIN
-  UPDATE usuario
-  SET nombre = p_nombre,
-      apellido = p_apellido,
-      cedula = p_cedula,
-      telefono = p_telefono,
-      email = p_email,
-      password = p_password,
-      rol_id = p_rol_id,
-      parqueadero_id = p_parqueadero_id
-  WHERE id = p_id;
-END //
-DELIMITER ;
-
--- Eliminar usuario
-DELIMITER //
-CREATE PROCEDURE sp_deleteUsuario(IN p_id INT)
-BEGIN
-  DELETE FROM usuario WHERE id = p_id;
-END //
-DELIMITER ;
-
-
--- Crear tipo de vehículo
-DELIMITER //
-CREATE PROCEDURE sp_createTipoVehiculo(IN p_nombre VARCHAR(100))
-BEGIN
-    INSERT INTO tipos_vehiculo (nombre) VALUES (p_nombre);
-END //
-DELIMITER ;
-
--- Obtener todos los tipos de vehículo
-DELIMITER //
-CREATE PROCEDURE sp_getTiposVehiculo()
-BEGIN
-    SELECT * FROM tipos_vehiculo;
-END //
-DELIMITER ;
-
--- Obtener tipo por id
-DELIMITER //
-CREATE PROCEDURE sp_getTipoVehiculoById(IN p_id INT)
-BEGIN
-    SELECT * FROM tipos_vehiculo WHERE id = p_id;
-END //
-DELIMITER ;
-
--- Actualizar tipo
-DELIMITER //
-CREATE PROCEDURE sp_updateTipoVehiculo(IN p_id INT, IN p_nombre VARCHAR(100))
-BEGIN
-    UPDATE tipos_vehiculo SET nombre = p_nombre WHERE id = p_id;
-END //
-DELIMITER ;
-
--- Eliminar tipo
-DELIMITER //
-CREATE PROCEDURE sp_deleteTipoVehiculo(IN p_id INT)
-BEGIN
-    DELETE FROM tipos_vehiculo WHERE id = p_id;
-END //
-DELIMITER ;
+-- HASH
+INSERT INTO hash(code) VALUES
+('ABC123HASH'),
+('XYZ987HASH');
