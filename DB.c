@@ -164,6 +164,18 @@ CREATE PROCEDURE sp_deleteTransaccion(IN p_id INT) BEGIN DELETE FROM transaccion
 
 DELIMITER ;
 
+--LOGIN
+DELIMITER //
+CREATE PROCEDURE sp_login_usuario(IN p_email VARCHAR(255))
+BEGIN
+      SELECT u.id, u.nombre, u.email, u.password, r.nombre AS rol
+    FROM usuario u
+    INNER JOIN rol r ON u.rol_id = r.id
+    WHERE u.email = p_email
+    LIMIT 1;
+END //
+DELIMITER ;
+
 
 --PROOF DATA
 
