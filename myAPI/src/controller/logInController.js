@@ -29,15 +29,16 @@ const login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
-
+    
     res.json({
       message: "Login exitoso",
       token,
       user: {
-        id: userData.id,
-        nombre: userData.nombre,
+         i: userData.id,
+        user: userData.nombre,
         email: userData.email,
-        rol: userData.rol,
+        r: userData.rol,
+       
       },
     });
   } catch (error) {
