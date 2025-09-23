@@ -168,7 +168,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE sp_login_usuario(IN p_email VARCHAR(255))
 BEGIN
-      SELECT u.id, u.nombre, u.email, u.password, r.nombre AS rol
+      SELECT u.id, u.nombre, u.email, u.password, r.id AS rol
     FROM usuario u
     INNER JOIN rol r ON u.rol_id = r.id
     WHERE u.email = p_email
