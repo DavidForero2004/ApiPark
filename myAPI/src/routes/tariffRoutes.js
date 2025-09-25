@@ -8,10 +8,13 @@ const {
   deleteTariff,
 } = require("../controller/tariffController");
 
-router.post("/new", createTariff);
-router.get("/", getTariffs);
-router.get("/:id", getTariffById);
-router.put("/:id", updateTariff);
-router.delete("/:id", deleteTariff);
+const {verifyToken} = require("../middleware/auth");
+
+
+router.post("/new", verifyToken,createTariff);
+router.get("/", verifyToken, getTariffs);
+router.get("/:id", verifyToken, getTariffById);
+router.put("/:id", verifyToken, updateTariff);
+router.delete("/:id", verifyToken, deleteTariff);
 
 module.exports = router;

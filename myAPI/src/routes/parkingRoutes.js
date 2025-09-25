@@ -9,10 +9,12 @@ const {
   deleteParking
 } = require("../controller/parkingController");
 
-router.post("/new", createParking);          
-router.get("/", getParkings);                
-router.get("/:id", getParkingById);          
-router.put("/update/:id", updateParking);   
-router.delete("/delete/:id", deleteParking); 
+const {verifyToken} = require("../middleware/auth");
+
+router.post("/new",verifyToken, createParking);          
+router.get("/", verifyToken,getParkings);                
+router.get("/:id", verifyToken, getParkingById);          
+router.put("/update/:id",verifyToken, updateParking);   
+router.delete("/delete/:id", verifyToken, deleteParking); 
 
 module.exports = router;

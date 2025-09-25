@@ -7,12 +7,13 @@ const {
   updateSubscription,
   deleteSubscription,
 } = require("../controller/subscriptionController");
+const {verifyToken} = require("../middleware/auth");
 
 // Routes
-router.post("/new", createSubscription);
-router.get("/", getSubscriptions);
-router.get("/:id", getSubscriptionById);
-router.put("/:id", updateSubscription);
-router.delete("/:id", deleteSubscription);
+router.post("/new",verifyToken, createSubscription);
+router.get("/", verifyToken, getSubscriptions);
+router.get("/:id", verifyToken,getSubscriptionById);
+router.put("/:id", verifyToken,updateSubscription);
+router.delete("/:id",verifyToken, deleteSubscription);
 
 module.exports = router;

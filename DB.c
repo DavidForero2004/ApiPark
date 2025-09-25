@@ -65,7 +65,7 @@ CREATE TABLE mensualidad (
   estado ENUM('ACTIVA','VENCIDA','CANCELADA') DEFAULT 'ACTIVA',
   FOREIGN KEY (usuario_id) REFERENCES usuario(id),
   FOREIGN KEY (tarifa_id) REFERENCES tarifas(id),
-  UNIQUE(usuario_id, placa)  -- Una placa por usuario
+  UNIQUE(usuario_id, placa)
 );
 
 -- 7. Transacciones
@@ -94,7 +94,6 @@ CREATE TABLE hash (
 );
 
 --PROCEDURES
-
 DELIMITER //
 
 -- HASH
@@ -122,7 +121,16 @@ CREATE PROCEDURE sp_deleteParqueadero(IN p_id INT) BEGIN DELETE FROM parqueadero
 -- USUARIO
 CREATE PROCEDURE sp_createUsuario(IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
 BEGIN INSERT INTO usuario(nombre,apellido,cedula,telefono,email,password,rol_id,parqueadero_id) VALUES(p_nombre,p_apellido,p_cedula,p_telefono,p_email,p_password,p_rol_id,p_parqueadero_id); END //
-CREATE PROCEDURE sp_getUsuarios() BEGIN SELECT * FROM usuario; END //
+
+CREATE PROCEDURE sp_getUsuarios(IN p_parqueadero_id INT)
+BEGIN
+    IF p_parqueadero_id = 0 THEN
+        SELECT * FROM usuario;
+    ELSE
+        SELECT * FROM usuario WHERE parqueadero_id = p_parqueadero_id;
+    END IF;
+END //
+
 CREATE PROCEDURE sp_getUsuarioById(IN p_id INT) BEGIN SELECT * FROM usuario WHERE id=p_id; END //
 CREATE PROCEDURE sp_updateUsuario(IN p_id INT, IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
 BEGIN UPDATE usuario SET nombre=p_nombre,apellido=p_apellido,cedula=p_cedula,telefono=p_telefono,email=p_email,password=p_password,rol_id=p_rol_id,parqueadero_id=p_parqueadero_id WHERE id=p_id; END //
@@ -138,7 +146,16 @@ CREATE PROCEDURE sp_deleteTipoVehiculo(IN p_id INT) BEGIN DELETE FROM tipos_vehi
 -- TARIFAS
 CREATE PROCEDURE sp_createTarifa(IN p_parqueadero_id INT, IN p_tipo_vehiculo_id INT, IN p_tarifa_dia DECIMAL(10,2), IN p_tarifa_mes DECIMAL(10,2))
 BEGIN INSERT INTO tarifas(parqueadero_id,tipo_vehiculo_id,tarifa_dia,tarifa_mes) VALUES(p_parqueadero_id,p_tipo_vehiculo_id,p_tarifa_dia,p_tarifa_mes); END //
-CREATE PROCEDURE sp_getTarifas() BEGIN SELECT * FROM tarifas; END //
+
+CREATE PROCEDURE sp_getTarifas(IN p_parqueadero_id INT)
+BEGIN
+    IF p_parqueadero_id = 0 THEN
+        SELECT * FROM tarifas;
+    ELSE
+        SELECT * FROM tarifas WHERE parqueadero_id = p_parqueadero_id;
+    END IF;
+END //
+
 CREATE PROCEDURE sp_getTarifaById(IN p_id INT) BEGIN SELECT * FROM tarifas WHERE id=p_id; END //
 CREATE PROCEDURE sp_updateTarifa(IN p_id INT, IN p_parqueadero_id INT, IN p_tipo_vehiculo_id INT, IN p_tarifa_dia DECIMAL(10,2), IN p_tarifa_mes DECIMAL(10,2))
 BEGIN UPDATE tarifas SET parqueadero_id=p_parqueadero_id,tipo_vehiculo_id=p_tipo_vehiculo_id,tarifa_dia=p_tarifa_dia,tarifa_mes=p_tarifa_mes WHERE id=p_id; END //
@@ -147,7 +164,19 @@ CREATE PROCEDURE sp_deleteTarifa(IN p_id INT) BEGIN DELETE FROM tarifas WHERE id
 -- MENSUALIDADES
 CREATE PROCEDURE sp_createMensualidad(IN p_usuario_id INT, IN p_tarifa_id INT, IN p_placa VARCHAR(20), IN p_fecha_inicio DATE, IN p_fecha_fin DATE, IN p_estado ENUM('ACTIVA','VENCIDA','CANCELADA'))
 BEGIN INSERT INTO mensualidad(usuario_id,tarifa_id,placa,fecha_inicio,fecha_fin,estado) VALUES(p_usuario_id,p_tarifa_id,p_placa,p_fecha_inicio,p_fecha_fin,p_estado); END //
-CREATE PROCEDURE sp_getMensualidades() BEGIN SELECT * FROM mensualidad; END //
+
+CREATE PROCEDURE sp_getMensualidades(IN p_parqueadero_id INT)
+BEGIN
+    IF p_parqueadero_id = 0 THEN
+        SELECT m.* FROM mensualidad m;
+    ELSE
+        SELECT m.* 
+        FROM mensualidad m
+        INNER JOIN usuario u ON m.usuario_id = u.id
+        WHERE u.parqueadero_id = p_parqueadero_id;
+    END IF;
+END //
+
 CREATE PROCEDURE sp_getMensualidadById(IN p_id INT) BEGIN SELECT * FROM mensualidad WHERE id=p_id; END //
 CREATE PROCEDURE sp_updateMensualidad(IN p_id INT, IN p_usuario_id INT, IN p_tarifa_id INT, IN p_placa VARCHAR(20), IN p_fecha_inicio DATE, IN p_fecha_fin DATE, IN p_estado ENUM('ACTIVA','VENCIDA','CANCELADA'))
 BEGIN UPDATE mensualidad SET usuario_id=p_usuario_id,tarifa_id=p_tarifa_id,placa=p_placa,fecha_inicio=p_fecha_inicio,fecha_fin=p_fecha_fin,estado=p_estado WHERE id=p_id; END //
@@ -156,7 +185,19 @@ CREATE PROCEDURE sp_deleteMensualidad(IN p_id INT) BEGIN DELETE FROM mensualidad
 -- TRANSACCIONES
 CREATE PROCEDURE sp_createTransaccion(IN p_usuario_id INT, IN p_mensualidad_id INT, IN p_tipo ENUM('CREACION','RENOVACION','PAGO','CANCELACION'), IN p_monto DECIMAL(10,2), IN p_descripcion MEDIUMTEXT)
 BEGIN INSERT INTO transacciones(usuario_id,mensualidad_id,tipo,monto,descripcion) VALUES(p_usuario_id,p_mensualidad_id,p_tipo,p_monto,p_descripcion); END //
-CREATE PROCEDURE sp_getTransacciones() BEGIN SELECT * FROM transacciones; END //
+
+CREATE PROCEDURE sp_getTransacciones(IN p_parqueadero_id INT)
+BEGIN
+    IF p_parqueadero_id = 0 THEN
+        SELECT t.* FROM transacciones t;
+    ELSE
+        SELECT t.*
+        FROM transacciones t
+        INNER JOIN usuario u ON t.usuario_id = u.id
+        WHERE u.parqueadero_id = p_parqueadero_id;
+    END IF;
+END //
+
 CREATE PROCEDURE sp_getTransaccionById(IN p_id INT) BEGIN SELECT * FROM transacciones WHERE id=p_id; END //
 CREATE PROCEDURE sp_updateTransaccion(IN p_id INT, IN p_usuario_id INT, IN p_mensualidad_id INT, IN p_tipo ENUM('CREACION','RENOVACION','PAGO','CANCELACION'), IN p_monto DECIMAL(10,2), IN p_descripcion MEDIUMTEXT)
 BEGIN UPDATE transacciones SET usuario_id=p_usuario_id,mensualidad_id=p_mensualidad_id,tipo=p_tipo,monto=p_monto,descripcion=p_descripcion WHERE id=p_id; END //
@@ -164,7 +205,7 @@ CREATE PROCEDURE sp_deleteTransaccion(IN p_id INT) BEGIN DELETE FROM transaccion
 
 DELIMITER ;
 
---LOGIN
+-- LOGIN
 DELIMITER //
 CREATE PROCEDURE sp_login_usuario(IN p_email VARCHAR(255))
 BEGIN
@@ -175,6 +216,7 @@ BEGIN
     LIMIT 1;
 END //
 DELIMITER ;
+
 
 
 --PROOF DATA

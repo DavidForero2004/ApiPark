@@ -10,9 +10,9 @@ const {
 const {verifyToken} = require("../middleware/auth");
 // Routes
 router.post("/new", verifyToken, createVehicleType);
-router.get("/", getVehicleTypes);
-router.get("/:id", getVehicleTypeById);
-router.put("/:id", updateVehicleType);
-router.delete("/:id", deleteVehicleType);
+router.get("/",verifyToken, getVehicleTypes);
+router.get("/:id",verifyToken, getVehicleTypeById);
+router.put("/:id",verifyToken, updateVehicleType);
+router.delete("/:id",verifyToken, deleteVehicleType);
 
 module.exports = router;

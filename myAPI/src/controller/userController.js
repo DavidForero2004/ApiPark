@@ -33,8 +33,9 @@ const createUser = async (req, res) => {
 
 // Get all users
 const getUsers = async (req, res) => {
+      let {parking_id } = req.body;
   try {
-    const [rows] = await db.query("CALL sp_getUsuarios()");
+    const [rows] = await db.query("CALL sp_getUsuarios(?)", [parking_id]);
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
