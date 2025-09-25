@@ -34,7 +34,7 @@ const login = async (req, res) => {
       message: "Login exitoso",
       token,
       user: {
-         i: userData.id,
+        i: userData.id,
         user: userData.nombre,
         email: userData.email,
         r: userData.rol,

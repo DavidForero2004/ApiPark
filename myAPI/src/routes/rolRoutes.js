@@ -9,10 +9,12 @@ const {
   getRoles
 } = require("../controller/rolController");
 
-router.post("/new", createRol);      
-router.get("/", getRoles);            
-router.get("/:id", getRolById);       
-router.put("/update/:id", updateRol);       
-router.delete("/delete/:id", deleteRol);    
+const {verifyToken} = require("../middleware/auth");
+
+router.post("/new",verifyToken, createRol);      
+router.get("/", verifyToken, getRoles);            
+router.get("/:id",verifyToken, getRolById);       
+router.put("/update/:id", verifyToken,updateRol);       
+router.delete("/delete/:id",verifyToken, deleteRol);    
 
 module.exports = router;
