@@ -20,8 +20,9 @@ const createTariff = async (req, res) => {
 
 // Get all tariffs
 const getTariffs = async (req, res) => {
+  const {parqueadero_id} = req.body;
   try {
-    const [rows] = await db.query("CALL sp_getTarifas()");
+    const [rows] = await db.query("CALL sp_getTarifas(?)", [parqueadero_id]);
     res.json(rows[0]);
   } catch (error) {
     console.error(error);

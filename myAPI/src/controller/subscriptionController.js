@@ -2,8 +2,9 @@ const pool = require("../config/db"); // mysql2/promise
 
 // Get all subscriptions
 const getSubscriptions = async (req, res) => {
+  const {parqueadero_id} = req.body;
   try {
-    const [rows] = await pool.query("CALL sp_getMensualidades()");
+    const [rows] = await pool.query("CALL sp_getMensualidades(?)",[parqueadero_id]);
     res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ message: error.message });

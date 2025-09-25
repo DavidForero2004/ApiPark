@@ -16,8 +16,9 @@ const createTransaction = async (req, res) => {
 
 // GET ALL
 const getTransactions = async (req, res) => {
+  const {parqueadero_id} = req.body;
   try {
-    const [rows] = await pool.query("CALL sp_getTransacciones()");
+    const [rows] = await pool.query("CALL sp_getTransacciones(?)", [parqueadero_id]);
     res.json(rows[0]); // mysql2 devuelve un array de resultados por cada SELECT en el SP
   } catch (error) {
     res.status(500).json({ message: error.message });
