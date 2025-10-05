@@ -38,6 +38,7 @@ const login = async (req, res) => {
         user: userData.nombre,
         email: userData.email,
         r: userData.rol,
+        p: userData.parqueadero_id
        
       },
     });

@@ -4,7 +4,7 @@ const { hashPassword } = require("./bcrypt");
 
 const createUser = async (req, res) => {
   try {
-    let { nombre, apellido, cedula, phone, email, password, rol_id, parking_id } = req.body;
+    let { nombre, apellido, cedula, telefono, email, password, rol_id, parking_id } = req.body;
 
     if (!nombre || !apellido || !cedula || !password || !rol_id || !parking_id) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -17,7 +17,7 @@ const createUser = async (req, res) => {
       nombre,
       apellido,
       cedula,
-      phone,
+      telefono,
       email,
       password,
       rol_id,
@@ -33,7 +33,7 @@ const createUser = async (req, res) => {
 
 // Get all users
 const getUsers = async (req, res) => {
-      let {parking_id } = req.body;
+      let {parking_id } = req.query;
   try {
     const [rows] = await db.query("CALL sp_getUsuarios(?)", [parking_id]);
     res.json(rows[0]);
@@ -60,7 +60,7 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    let { nombre, apellido, cedula, phone, email, password, rol_id, parking_id } = req.body;
+    let { nombre, apellido, cedula, telefono, email, password, rol_id, parking_id } = req.body;
 
     // Hash de la contraseña solo si se envía nueva
     if (password) {
@@ -72,7 +72,7 @@ const updateUser = async (req, res) => {
       nombre,
       apellido,
       cedula,
-      phone,
+      telefono,
       email,
       password,
       rol_id,
@@ -81,7 +81,7 @@ const updateUser = async (req, res) => {
 
     res.json({ message: "User updated successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
   }
 };
 

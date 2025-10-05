@@ -122,19 +122,70 @@ CREATE PROCEDURE sp_deleteParqueadero(IN p_id INT) BEGIN DELETE FROM parqueadero
 CREATE PROCEDURE sp_createUsuario(IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
 BEGIN INSERT INTO usuario(nombre,apellido,cedula,telefono,email,password,rol_id,parqueadero_id) VALUES(p_nombre,p_apellido,p_cedula,p_telefono,p_email,p_password,p_rol_id,p_parqueadero_id); END //
 
+DELIMITER //
 CREATE PROCEDURE sp_getUsuarios(IN p_parqueadero_id INT)
 BEGIN
     IF p_parqueadero_id = 0 THEN
-        SELECT * FROM usuario;
+        SELECT u.id,
+               u.nombre,
+               u.apellido,
+               u.cedula,
+               u.telefono,
+               u.email,
+               u.password,
+               u.rol_id,
+               u.parqueadero_id as parking_id,
+               p.nombre AS parqueadero_nombre
+        FROM usuario u
+        INNER JOIN parqueadero p ON u.parqueadero_id = p.id;
     ELSE
-        SELECT * FROM usuario WHERE parqueadero_id = p_parqueadero_id;
+        SELECT u.id,
+               u.nombre,
+               u.apellido,
+               u.cedula,
+               u.telefono,
+               u.email,
+               u.password,
+               u.rol_id,
+               u.parqueadero_id as parking_id,
+               p.nombre AS parqueadero_nombre
+        FROM usuario u
+        INNER JOIN parqueadero p ON u.parqueadero_id = p.id
+        WHERE u.parqueadero_id = p_parqueadero_id;
     END IF;
 END //
+DELIMITER ;
+
 
 CREATE PROCEDURE sp_getUsuarioById(IN p_id INT) BEGIN SELECT * FROM usuario WHERE id=p_id; END //
-CREATE PROCEDURE sp_updateUsuario(IN p_id INT, IN p_nombre VARCHAR(100), IN p_apellido VARCHAR(100), IN p_cedula VARCHAR(20), IN p_telefono VARCHAR(20), IN p_email VARCHAR(100), IN p_password VARCHAR(255), IN p_rol_id INT, IN p_parqueadero_id INT)
-BEGIN UPDATE usuario SET nombre=p_nombre,apellido=p_apellido,cedula=p_cedula,telefono=p_telefono,email=p_email,password=p_password,rol_id=p_rol_id,parqueadero_id=p_parqueadero_id WHERE id=p_id; END //
-CREATE PROCEDURE sp_deleteUsuario(IN p_id INT) BEGIN DELETE FROM usuario WHERE id=p_id; END //
+DELIMITER //
+
+CREATE PROCEDURE sp_updateUsuario(
+    IN p_id INT,
+    IN p_nombre VARCHAR(100),
+    IN p_apellido VARCHAR(100),
+    IN p_cedula VARCHAR(20),
+    IN p_telefono VARCHAR(20),
+    IN p_email VARCHAR(100),
+    IN p_password VARCHAR(255),
+    IN p_rol_id INT,
+    IN p_parqueadero_id INT
+)
+BEGIN
+    UPDATE usuario 
+    SET 
+        nombre         = COALESCE(p_nombre, nombre),
+        apellido       = COALESCE(p_apellido, apellido),
+        cedula         = COALESCE(p_cedula, cedula),
+        telefono       = COALESCE(p_telefono, telefono),
+        email          = COALESCE(p_email, email),
+        password       = COALESCE(p_password, password),
+        rol_id         = COALESCE(p_rol_id, rol_id),
+        parqueadero_id = COALESCE(p_parqueadero_id, parqueadero_id)
+    WHERE id = p_id;
+END //
+
+DELIMITER ;
 
 -- TIPOS DE VEHÍCULO
 CREATE PROCEDURE sp_createTipoVehiculo(IN p_nombre VARCHAR(100)) BEGIN INSERT INTO tipos_vehiculo(nombre) VALUES(p_nombre); END //
@@ -209,7 +260,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE sp_login_usuario(IN p_email VARCHAR(255))
 BEGIN
-      SELECT u.id, u.nombre, u.email, u.password, r.id AS rol
+      SELECT u.id, u.nombre, u.email, u.password, r.id AS rol, u.parqueadero_id
     FROM usuario u
     INNER JOIN rol r ON u.rol_id = r.id
     WHERE u.email = p_email
@@ -271,3 +322,4 @@ INSERT INTO metodos_pago(nombre) VALUES
 INSERT INTO hash(code) VALUES
 ('ABC123HASH'),
 ('XYZ987HASH');
+
